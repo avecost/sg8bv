@@ -1,7 +1,10 @@
 package sg8bv
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"unicode"
 
 	"github.com/avecost/sg8bv/db"
 	"github.com/avecost/sg8bv/models/nine"
@@ -28,6 +31,31 @@ func (v *Valid) Run(dateTo string) {
 		println(err.Error())
 	}
 	println("Processing SG8 Baccarat Raffle Entries (Tie) : ", len(rtRows))
+
+	r9Rows, err := raffle.GetAllPendingBaccaratResultsByGameId(v.AppDb, 1, 367, dateTo)
+	if err != nil {
+		println(err.Error())
+	}
+	println("Processing SG8 Baccarat Raffle Entries (Nine) : ", len(r9Rows))
+
+	// prompt to continue
+	fmt.Print("Continue [y/N]: ")
+	reader := bufio.NewReader(os.Stdin)
+	char, _, err := reader.ReadRune()
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	char = unicode.ToLower(rune(char))
+	if char == 'y' {
+		v.process(rtRows, r9Rows, dateTo)
+	}
+
+}
+
+func (v *Valid) process(rtRows []raffle.Raffle, r9Rows []raffle.Raffle, dateTo string) {
+
 	for _, rtRow := range rtRows {
 		df := rtRow.JackpotAt.Format("2006-01-02") + "%"
 		fmt.Println(rtRow.Id, rtRow.TerminalAcct, df, rtRow.JackpotAmt)
@@ -43,11 +71,6 @@ func (v *Valid) Run(dateTo string) {
 		}
 	}
 
-	r9Rows, err := raffle.GetAllPendingBaccaratResultsByGameId(v.AppDb, 1, 367, dateTo)
-	if err != nil {
-		println(err.Error())
-	}
-	println("Processing SG8 Baccarat Raffle Entries (Nine) : ", len(r9Rows))
 	for _, r9Row := range r9Rows {
 		df := r9Row.JackpotAt.Format("2006-01-02") + "%"
 		fmt.Println(r9Row.Id, r9Row.TerminalAcct, df, r9Row.JackpotAmt)
